@@ -12,6 +12,7 @@ click
 colorama
 cycler
 Dash
+dash
 dash-core-components
 dash-html-components
 dash-table
