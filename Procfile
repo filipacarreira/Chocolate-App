@@ -1,1 +1,1 @@
-web: gunicorn DV_notebook:server
+web: gunicorn Cocoa_Dash:server
