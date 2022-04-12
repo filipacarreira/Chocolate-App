@@ -434,9 +434,10 @@ data_origin.drop(data_origin[data_origin["country"]=="Saint Vincent and the Gren
 
 # # ------------------------ App - HTML ---------------------
 
-app = dash.Dash(__name__)
+app = dash.Dash(__name__, meta_tags=[{'content': 'width=device-width, initial-scale=1'}])
 
 server = app.server
+app.title = 'Diving into Chocolate'
 
 app.layout = html.Div([
                         html.Br(),
