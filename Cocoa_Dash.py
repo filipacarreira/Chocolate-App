@@ -2,6 +2,7 @@
 #!pip install Dash
 #!pip install dash_daq
 
+########### Needed Libraries ###########
 import pandas as pd
 import plotly 
 import numpy as np
@@ -22,12 +23,14 @@ import dash_bootstrap_components as dbc
 import urllib.request, json 
 import dash_daq as daq
 
-# Import data
+########### Import Data ###########
+
 data = pd.read_csv('chocolate.csv')
 continent = pd.read_csv('countryContinent.csv',encoding = "ISO-8859-1")
 imp_exp=pd.read_csv('UNdata_Export_20220301_151116452.csv')
 coord = pd.read_csv('country_points.csv', encoding = "ISO-8859-1")
 
+########### Pre-processing ###########
 imp_exp=imp_exp[imp_exp['Commodity']=='Cocoa beans, whole or broken, raw or roasted'][['Country or Area','Year','Commodity','Flow','Quantity','Trade (USD)']]
 
 # Prepare the data for the merge
@@ -50,7 +53,7 @@ data1=data.groupby(by=['company']).mean()
 imp_exp_regions = imp_exp.merge(continent[['country','continent','sub_region','code_2']].rename(columns={'sub_region':'region'}), left_on = 'Country or Area', right_on= 'country', how= 'left')
 
 
-### TREEMAP
+########### Treemap Dataframe ###########
 
 imp_exp_regions.loc[(imp_exp_regions['continent']=='nan') & (imp_exp_regions['Country or Area']!='nan')]
 imp_exp_regions['country'].isna().sum()
@@ -167,6 +170,7 @@ groupby_flows.drop(columns='continent', inplace=True)
 groupby_flows.head(3)
 
 
+########### Options for tree map ###########
 tree_variables = [
                     {'label': 'Quantity', 'value': 'Quantity'},
                     {'label': 'Trade (USD)', 'value': 'Trade (USD)'}
@@ -178,7 +182,7 @@ tree_flows_Dict = [
                  ]
 
 
-
+########### Options for Dropdown ###########
 ingredients = [
     {'label': 'Has Sugar', 'value': 'have_sugar'},
     {'label': 'Has not Sugar', 'value': 'have_not_sugar'},
@@ -191,7 +195,7 @@ ingredients = [
 ]
 
 
-### Column count_tastes
+########### Column count_tastes ###########
 
 test_taste = data
 test_taste['first_taste'].fillna(value = 0, inplace = True)
@@ -207,37 +211,12 @@ test_taste['binFourth_taste'] = test_taste['fourth_taste'].apply(taste)
 test_taste['count_tastes'] = test_taste['binFirst_taste'] + test_taste['binSecond_taste'] + test_taste['binThird_taste'] + test_taste['binFourth_taste']
 
 
-### Radar Plot
-
-feat_radar = ['cocoa_percent', 'rating', 'counts_of_ingredients', 'count_tastes']
-radar = pd.DataFrame(round(test_taste.groupby(by = 'company')[feat_radar].mean(),2))
-radar['company_name'] = radar.index
-radar.insert(0, 'cocoa_level', round((5 * radar['cocoa_percent']) / 100, 2))
-radar.drop(columns = {'cocoa_percent'}, inplace = True)
-
-feat_radar = ['cocoa_level', 'rating', 'counts_of_ingredients', 'count_tastes']
-company1 = '5150'
-company2 = 'A. Morin'
-radar['company_name'].isin([company1, company2])
-company1_list = []
-
-company1_df = pd.DataFrame(radar[radar['company_name'] == company1])
-for i in range(len(radar.columns)-1):
-    company1_list.append(radar[radar['company_name'] == company1].iloc[0,i])
-
-company1_list
-company2_list = []
-
-company2_df = pd.DataFrame(radar[radar['company_name'] == company2])
-for i in range(len(radar.columns)-1):
-    company2_list.append(radar[radar['company_name'] == company2].iloc[0,i])
-
+########### Companies for Dropdown ###########
 
 companies = list(data['company'].unique())
 
 
-### Routes Dataframe
-
+########### Routes Dataframe ###########
 routes_bean = pd.DataFrame(data[['company', 'company_location', 'company_code_2', 'country_of_bean_origin', 'bean_code_2']])
 
 routes_bean = routes_bean.merge(coord[['latitude', 'longitude', 'country']], left_on = 'company_code_2', right_on = 'country', how = 'left').rename(columns = {'latitude': 'lat_company', 'longitude' : 'long_company'})
@@ -252,9 +231,10 @@ count_routes['count'] = routes_bean.groupby(['route']).size().values
 
 
 # Pick the routes with most flights
-count_routes = count_routes.loc[count_routes['count'] > np.quantile(count_routes['count'], q = 0.75)]
+count_routes = count_routes.loc[count_routes['count'] > np.quantile(count_routes['count'], q = 0.9)]
 count_routes = count_routes.reset_index()
 
+# ================================= World Map Routes =================================
 fig_routes = go.Figure()
 
 fig_routes.add_trace(go.Scattergeo(
@@ -280,7 +260,7 @@ cmap = plt.cm.RdPu
 color = cmx.ScalarMappable(cmap = cmap).to_rgba(count_routes['count'], bytes = True)
 color = ['rgba(' + str(x[0]) + ', ' + str(x[1]) + ', ' + str(x[2]) + ', ' + str(x[3]) + ')' for x in color]
 
-
+# Adding routes
 for i in range(len(count_routes)): 
     fig_routes.add_trace(
         go.Scattergeo(
@@ -309,15 +289,17 @@ fig_routes.update_layout(
         projection_type = 'equirectangular',
         showland = True,
         showcountries = True,
-        landcolor = 'rgba(68,68,68,255)',
-        countrycolor = 'rgb(148,148,148)',
+        showocean = True,
+        landcolor = 'rgb(209,190,168)',
+        countrycolor = 'rgba(68,68,68,255)',
+        oceancolor = 'rgb(95,158,160)',
     ),
 )
 
 fig_routes.update_layout(height=400, margin={"r":40,"t":0,"l":40,"b":0})
 
 
-### MAP
+########### World Map Dataframe ###########
 
 path_geo = ''
 
@@ -450,7 +432,7 @@ data_origin.drop(data_origin[data_origin["country"]=="Grenada"].index, inplace=T
 data_origin.drop(data_origin[data_origin["country"]=="Saint Vincent and the Grenadines"].index, inplace=True)
 
 
-# -------------------APP------------------
+# # ------------------------ App - HTML ---------------------
 
 app = dash.Dash(__name__)
 
@@ -462,9 +444,9 @@ app.layout = html.Div([
                         html.Br(),
                         html.Div([
                                 
-                                html.H1('Diving into Chocolate',style={"margin-top": "0","font-weight": "bold","text-align": "center","font-family":'verdana'}),
-                                html.H3('Taking a closer look into the Chocolate Industry',style={"margin-top": "0","font-weight": "bold","text-align": "center","font-family":'verdana'}),
-                                ], id='title_id'),
+                                html.H1('Diving into Chocolate',style={"margin-top": "0","font-weight": "bold","text-align": "center", 'font-size' : '50px'}),
+                                html.H3('Taking a closer look into the Chocolate Industry',style={"margin-top": "0","font-weight": "bold","text-align": "center"}),
+                                ]),
                         
                         html.Br(),
                         html.Br(), 
@@ -473,7 +455,7 @@ app.layout = html.Div([
                                 #WORLD MAP
                                 html.Div([
                                          html.Div([
-                                                html.H3("Cocoa around the world", style={"margin-top": "0","font-weight": "bold","text-align": "center","font-family":'verdana'}),
+                                                html.H3("Cocoa Around the World", style={"margin-top": "0","font-weight": "bold","text-align": "center"}),
                                                 ]),
                                          
                                         html.Div([
@@ -503,7 +485,6 @@ app.layout = html.Div([
                                                                         ]),
                                                                 ], style = {'padding-right':'10px'}),
                                                                 html.Br(),
-                                                                html.Br(),
                                                                 html.Div([
                                                                       html.P('In this map, you can see either the country where the cocoa beans are originally from or the nationality of the companies that produce the chocolates in the dataset, according to the average ratings of the chocolates or the number of chocolates they have.')  
                                                                 ],style={"text-align": "justify"})
@@ -532,7 +513,7 @@ app.layout = html.Div([
                                                         html.P('Here you have the chance to find the company which sells your dream chocolate according to its rating. If the names of the companies are colored, then they sell the chocolate with the highest review rank. The number of times the company takes place in the visualization, corresponds to the number of chocolates owned with the given filters. The words’ size corresponds to the ranking of the chocolate.')
                                                         ],style={"text-align": "justify"}),  
                                                 html.Div([
-                                                       html.P('<strong> Note: </strong> If there are company names overlapping in the visualization, you can zoom in a specific area.') 
+                                                       html.P('Note: If there are company names overlapping in the visualization, you can zoom in a specific area.') 
                                                 ],style={"font-size": '12px',"text-align": "justify"}),
                                                 html.H4('Choose the ingredients you like a chocolate to have:'),
                                                 html.Div([ 
@@ -543,9 +524,11 @@ app.layout = html.Div([
                                                                 value=['have_sugar','have_vanila'],
                                                                 clearable=False,
                                                                 #searchable=False, 
-                                                                multi=True,style= {'box-shadow': '0px 0px #ebb36a', 'border-color': '#ebb36a'} 
+                                                                multi=True,
+                                                                style= {'box-shadow': '0px 0px #ebb36a'},
+                                                                
                                                                 ),
-                                                                        ], style={'margin': '10px', 'padding-top':'15px', 'padding-bottom':'15px'}),
+                                                                        ], className="custom-dropdown", style={'margin': '10px', 'padding-top':'15px', 'padding-bottom':'15px'}),
                                                 html.Div([ 
                                                         html.Br(),
                                                         html.H4('Choose the desired Cocoa percentage range:'),
@@ -653,15 +636,15 @@ app.layout = html.Div([
                              # TREEMAP
                                html.Div([ 
                                         html.Div([
-                                                html.H3("Exports vs Imports of Cocoa", style={"margin-top": "0","font-weight": "bold","text-align": "center","font-family":'verdana'}),
-                                                ],className='title_vis'),
+                                                html.H3("Exports vs Imports of Cocoa", style={"margin-top": "0","font-weight": "bold","text-align": "center"}),
+                                                ]),
                                         
                                         #FILTROS
                                         html.Div([
                                                 html.Div([
                                                         html.Br(),
                                                         html.P('Here you can have a simple overview of the main international traders of Cocoa in a year between 1991 to 2019. You can choose to look over Quantity traded or Trade in USD, between Imports or Exports and a specific year.')
-                                                ], style={"text-align": "justify", 'width': '30%','padding-left':'75px'}), 
+                                                ], style={"text-align": "justify", 'width': '35%','padding-left':'75px'}), 
                                                     
                                                 html.Div([ 
                                                         html.H4('What variable do you want to analyze?'),
@@ -672,9 +655,9 @@ app.layout = html.Div([
                                                                 className='radio',
                                                                 style={'display':'block'}
                                                                 ),
-                                                        ], style={'padding-bottom':'15px','width': '25%','padding-left': '120px'}),
+                                                        ], style={'padding-bottom':'15px','width': '20%','padding-left': '120px'}),
                                                 
-                                                html.Div([                                                        
+                                                html.Div([                                                       
                                                         html.H4("Pick a Flow:"),
                                                         html.Br(),
                                                         dbc.RadioItems(
@@ -685,11 +668,11 @@ app.layout = html.Div([
                                                                 style={'display':'block'}
                                                                 ) ,
                                                         
-                                                        ], style={'padding-bottom':'15px','width': '25%','padding-left': '120px'}),
+                                                        ], style={'padding-bottom':'15px','width': '20%','padding-left': '110px'}),
 
                                                 html.Div([
                                                           html.Img(src=app.get_asset_url('tree.png'), style={'position': 'relative', 'width': '70%'})
-                                                ], style={'width': '20%'}),
+                                                ], style={'width': '20%','padding-left':'60px'}),
 
                                         ],style={'width': '100%','display': 'flex','justify-content': 'center'}),
                                                 
@@ -715,13 +698,16 @@ app.layout = html.Div([
                         # Bean Routes
                         html.Div([
                                 html.Div([
-                                        html.H3("Bean Routes around the world", style={"margin-top": "0","font-weight": "bold","text-align": "center","font-family":'verdana'}),
-                                        ],className='title_vis'),
+                                        html.H3("Bean Routes Around the World", style={"margin-top": "0","font-weight": "bold","text-align": "center"}),
+                                        ]),
                                 
                                 html.Div([
                                         html.Div([
+                                                html.P('In this visualization you can see which are the main routes of cocoa beans around the world. The origin of the bean is the country where it is produced and the destination is the country of the company that uses thoses beans. Only the 10% most frequent routes  were chosen to be present in this visualization'),
+                                                html.Div([
+                                                       html.P('Note: To see information about each route, hover over the countries and not the lines.') 
+                                                ],style={"font-size": '12px',"text-align": "justify"}),
                                                 html.Br(),
-                                                html.P('In this visualization you can see which are the main routes of cocoa\'s bean around the world. The origin of the bean is the country where it is produced and the destination is the country of the company that uses thoses beans. Only the routes above the 75% quantile were chosen to be present in this visualization'),
                                                 html.Br(),
                                                 html.Br(),
                                                 html.Img(src=app.get_asset_url('Cocoa-Bean-PNG-Image.png'), style={'margin-left': 'auto','margin-right': 'auto','display': 'block', 'width': '70%'})
@@ -738,8 +724,9 @@ app.layout = html.Div([
                         html.Div([
                         html.Div([
                                 html.H3('Authors:'),
-                                html.P('Beatriz Vizoso | Filipa Alves | Helena Oliveira | Maria Almeida')
-                                ],className='box'),
+                                html.P('Beatriz Vizoso | Filipa Alves'),
+                                html.P('Helena Oliveira | Maria Almeida'),
+                                ],className='box', style={'width': '25%'}),
                         
                         html.Div([
                                 html.H3('Sources:'),
@@ -750,13 +737,14 @@ app.layout = html.Div([
                                         - Cocoa Imports and Exports: 
                                                 https://wits.worldbank.org/trade/comtrade/en/country/ALL/year/2019/tradeflow/Exports/partner/WLD/product/180100 """),
         
-                                ], className='box'),
+                                ], className='box', style={'width': '75%'}),
                         ],style={'display':'flex'})
                         
                 ],style={'margin':'80px'})
 
 
 
+# ================================= Radar Chart =================================
 @app.callback(
    
    Output('radar', 'figure'),
@@ -831,6 +819,8 @@ def update_radar(drop_comp1_id,drop_comp2_id):
     )
     return fig
 
+
+# ================================= Word Cloud =================================
 @app.callback(
    
    [Output("name_company_id", "children"),
@@ -916,6 +906,8 @@ def update_graph(drop_id,percent_id):
            country , \
            fig
 
+
+# ================================= World Map =================================
 @app.callback(
     Output("choroplethmapbox", "figure"),
     [
@@ -941,6 +933,7 @@ def make_choroplethmap(country_radio,number_radio):
     data_choroplethmap = dict(type='choroplethmapbox', 
                             geojson=data_geo,
                             locations=df["country"], 
+                            #locationmode="country names",
                             z=df[number_radio],                         
                             colorscale='brwnyl',
                             colorbar=dict(title=legend_title),
@@ -954,18 +947,29 @@ def make_choroplethmap(country_radio,number_radio):
                                             ) for feature in data_geo['features']]
                                             ),
                                 title=dict(text=main_title1,
-                                        x=.5 
+                                        x=.5 # Title relative position according to the xaxis, range (0,1)
                                         )
                             )
     
     fig_choroplethmap = go.Figure(data=data_choroplethmap, layout=layout_choroplethmap)
-    fig_choroplethmap.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+    fig_choroplethmap.update_layout(paper_bgcolor='rgba(0,0,0,0)', 
+                                    plot_bgcolor='rgba(0,0,0,0)',
+                                    )
+    fig_choroplethmap.update_layout(geo = dict(
+        showland = True,
+        showcountries = True,
+        showocean = True,
+        landcolor = 'rgb(209,190,168)',
+        countrycolor = 'rgba(68,68,68,255)',
+        oceancolor = 'rgb(95,158,160)',
+        ))
 
-    fig_choroplethmap.update_layout(height=400, margin={"r":0,"t":0,"l":20,"b":0})
+    fig_choroplethmap.update_layout(height=450, margin={"r":0,"t":0,"l":20,"b":0})
 
     return fig_choroplethmap
 
 
+# ================================= Treemap =================================
 @app.callback(
     Output("treemap_vis", "figure"), 
     
