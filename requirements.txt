@@ -12,7 +12,9 @@ click
 colorama
 cycler
 Dash
+dash_bootstrap_components
 dash-core-components
+dash_daq
 dash-html-components
 dash-table
 decorator
