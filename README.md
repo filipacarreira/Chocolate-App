@@ -6,7 +6,7 @@
 - Helena Oliveira
 - Maria Almeida
 
-Master in Data Science and Advanced Analytics - Spring 2022
+Master in Data Science and Advanced Analytics (Nova IMS, Lisbon) - Spring 2022
 
 Chocolate is a widely appreciated candy all over the world, but especially in Europe. 16 of the top 20 countries that consume the most chocolate are European and Portugal is not an exception.
 
