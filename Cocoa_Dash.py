@@ -445,8 +445,9 @@ app.layout = html.Div([
                         html.Br(),
                         html.Div([
                                 
-                                html.H1('Diving into Chocolate',style={"margin-top": "0","font-weight": "bold","text-align": "center", 'font-size' : '50px'}),
-                                html.H3('Taking a closer look into the Chocolate Industry',style={"margin-top": "0","font-weight": "bold","text-align": "center"}),
+                                html.H1('Diving into Chocolate',style={"margin-top": "0","font-weight": "bold","text-align": "center", 'font-size' : '60px'}),
+                                html.H2('Taking a closer look into the Chocolate Industry',style={"margin-top": "0","font-weight": "bold","text-align": "center"}),
+                                html.P('Having in mind our love for chocolate, we created a dashboard with information about different chocolates and cocoa trade around the world.', style = {"text-align": "center"}),
                                 ]),
                         
                         html.Br(),
