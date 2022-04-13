@@ -66,6 +66,7 @@ imp_exp_regions["Quantity"]= imp_exp_regions["Quantity"].fillna(imp_exp_regions.
 imp_exp_regions['Quantity'].astype(int)
 imp_exp_regions=imp_exp_regions[imp_exp_regions['Country or Area'].isnull()!= True] #removing nulls from Country or Area Column
 
+imp_exp_regions.loc[imp_exp_regions['Country or Area'] == 'State of Palestine', 'continent'] = 'Asia'
 imp_exp_regions.loc[imp_exp_regions['Country or Area'] == 'Wallis and Futuna Isds', 'continent'] = 'Oceania'
 imp_exp_regions.loc[imp_exp_regions['Country or Area'] == 'Wallis and Futuna Isds','region'] = 'Polynesia'
 imp_exp_regions.loc[imp_exp_regions['Country or Area'] == 'Venezuela', 'continent'] = 'Americas'
@@ -135,40 +136,18 @@ imp_exp_regions= imp_exp_regions[~(imp_exp_regions['Country or Area'] == 'EU-28'
 imp_exp_regions= imp_exp_regions[~(imp_exp_regions['Country or Area'] == 'So. African Customs Union')]
 imp_exp_regions= imp_exp_regions[~(imp_exp_regions['Country or Area'] == 'China, Hong Kong SAR')]
 
-flows_df=imp_exp_regions.drop(columns=['country', 'code_2'])
+flows_df=imp_exp_regions.drop(columns=['country', 'code_2','region'])
 #convert data type and sort the data by Year
 flows_df=flows_df.sort_values(by=['Year'])
 flows_df=flows_df.dropna(how='any')
-groupby_flows=flows_df.groupby(['Year','continent', 'region', 'Country or Area', 'Flow']).mean(['Trade (USD)','Quantity'])
-groupby_flows.reset_index(inplace=True)
-groupby_flows.head(3)
-groupby_flows=groupby_flows[groupby_flows['Year']!=1988]
-groupby_flows=groupby_flows[groupby_flows['Year']!=1989]
-groupby_flows=groupby_flows[groupby_flows['Year']!=1990]
+#flows_df[flows_df['Quantity']<= 0]
+flows_df= flows_df[~(flows_df['Quantity'] <= 0)] 
+
 #delete years until all continents have value for exports and imports
 
 flows_df=flows_df[flows_df['Year']!=1988]
 flows_df=flows_df[flows_df['Year']!=1989]
 flows_df=flows_df[flows_df['Year']!=1990]
-africa_count= len(flows_df.groupby('continent')['Country or Area'].unique()[0])
-americas_count= len(flows_df.groupby('continent')['Country or Area'].unique()[1])
-asia_count= len(flows_df.groupby('continent')['Country or Area'].unique()[2])
-europe_count= len(flows_df.groupby('continent')['Country or Area'].unique()[3])
-oceania_count= len(flows_df.groupby('continent')['Country or Area'].unique()[4])
-
-
-nr_countries = [['Africa', africa_count],
-                ['Americas', americas_count], 
-                ['Asia', asia_count],
-                ['Europe', europe_count],
-                ['Oceania', oceania_count]]
-
-df_nr_countries = pd.DataFrame(nr_countries, columns = ['Continent', 'Nr of Countries'])
-print(df_nr_countries)
-groupby_flows= pd.merge(df_nr_countries, groupby_flows, left_on='Continent', right_on='continent')
-groupby_flows.drop(columns='continent', inplace=True)
-groupby_flows.head(3)
-
 
 ########### Options for tree map ###########
 tree_variables = [
@@ -683,11 +662,11 @@ app.layout = html.Div([
                                         html.Div([
                                                 dcc.Graph(id='treemap_vis'),
                                                 dcc.Slider(
-                                                        groupby_flows['Year'].min(), 
-                                                        groupby_flows['Year'].max(),
+                                                        flows_df['Year'].min(), 
+                                                        flows_df['Year'].max(),
                                                         step=None,
-                                                        value=groupby_flows['Year'].min(),
-                                                        marks={str(year): str(year) for year in groupby_flows['Year'].unique()},
+                                                        value=flows_df['Year'].min(),
+                                                        marks={str(year): str(year) for year in flows_df['Year'].unique()},
                                                         included=False,
                                                         id='treeyear_slider',
                                                         )
@@ -982,7 +961,7 @@ def make_choroplethmap(country_radio,number_radio):
     )
 
 def update_treemap(selected_var='Quantity', selected_flow='Export', selected_year=1991):
-    filtered_df= groupby_flows[(groupby_flows['Flow']==selected_flow) & (groupby_flows['Year']==selected_year)]
+    filtered_df= flows_df[(flows_df['Flow']==selected_flow) & (flows_df['Year']==selected_year)]
     fig = px.treemap(filtered_df, path=['Country or Area'],values=selected_var, color=selected_var, color_continuous_scale='brwnyl')
     #title=(str(selected_var) + ' of Cocoa ' + str(selected_flow) + 'ed by Country in ' + str(selected_year))) 
     
