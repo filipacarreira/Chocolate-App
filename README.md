@@ -15,3 +15,5 @@ Having in mind our love for chocolate, we decided to analyse a dataset with info
 So, to all the fellow chocolate lovers, we hope you like it!
 
 Heroku Link: https://chocolate-analysis.herokuapp.com/
+
+#### Grade: 19/20
